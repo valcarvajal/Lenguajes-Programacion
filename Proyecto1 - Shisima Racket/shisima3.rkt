@@ -1,0 +1,116 @@
+#lang racket/base
+
+(require racket/list)
+(require racket/string)
+
+(define (imprimir-tablero tablero)
+  (for-each (lambda (fila)
+              (for-each (lambda (casilla)
+                          (display casilla)
+                          (display " "))
+                        fila)
+              (newline))
+            tablero))
+
+(define (movimiento-valido? tablero fila-inicial columna-inicial fila-destino columna-destino jugador)
+  (define (es-valida? f c)
+    (and (>= f 0) (<= f 2) (>= c 0) (<= c 2)))
+
+  (define ficha-inicial (list-ref (list-ref tablero fila-inicial) columna-inicial))
+  (define casilla-destino (list-ref (list-ref tablero fila-destino) columna-destino))
+
+  (define diferencia-filas (abs (- fila-destino fila-inicial)))
+  (define diferencia-columnas (abs (- columna-destino columna-inicial)))
+
+  (define resultado
+    (and (eq? ficha-inicial jugador)
+         (or (and (eq? fila-destino 1) (eq? columna-destino 1) (eq? casilla-destino 'v)) ; Movimiento al centro
+             (and (eq? casilla-destino 'v)
+                  (<= (+ diferencia-filas diferencia-columnas) 1))))) ; Movimiento adyacente
+
+  resultado)
+
+(define (realizar-movimiento tablero jugador fila-inicial columna-inicial fila-destino columna-destino)
+  (define nueva-fila-inicial (list-ref tablero fila-inicial))
+  (define ficha-a-mover (list-ref nueva-fila-inicial columna-inicial))
+  
+  (if (eq? ficha-a-mover jugador)
+      (begin
+        (set! tablero (list-set tablero fila-inicial (list-set nueva-fila-inicial columna-inicial 'v)))
+        (set! tablero (list-set tablero fila-destino (list-set (list-ref tablero fila-destino) columna-destino jugador)))
+        )
+      (display "Movimiento inválido, elige otra casilla.\n"))
+
+  tablero)
+
+(define (verificar-victoria tablero jugador)
+  (define medio (list-ref (list-ref tablero 1) 1)) ; Obtener la casilla del medio
+  (if (not (eq? medio jugador))
+      #f ; Si el jugador no tiene una ficha en el medio, no puede ganar
+      (or
+        ;; Verificar fila central
+        (andmap (lambda (casilla) (eq? casilla jugador)) (list-ref tablero 1))
+
+        ;; Verificar columna central
+        (andmap (lambda (fila) (eq? (list-ref fila 1) jugador)) tablero)
+
+        ;; Verificar diagonal principal
+        (and (eq? (list-ref (list-ref tablero 0) 0) jugador)
+             (eq? (list-ref (list-ref tablero 1) 1) jugador)
+             (eq? (list-ref (list-ref tablero 2) 2) jugador))
+
+        ;; Verificar diagonal secundaria
+        (and (eq? (list-ref (list-ref tablero 0) 2) jugador)
+             (eq? (list-ref (list-ref tablero 1) 1) jugador)
+             (eq? (list-ref (list-ref tablero 2) 0) jugador)))))
+
+
+(define (jugar-shisima)
+  (define jugador-1 'p)
+  (define jugador-2 's)
+  (define turno jugador-1)
+  (define tablero
+    '[[v p p]
+      [s v p]
+      [s s v]])
+
+  (define (cambiar-turno)
+    (if (eq? turno jugador-1)
+        (set! turno jugador-2)
+        (set! turno jugador-1)))
+
+  (define (mostrar-mensaje resultado)
+    (if resultado
+        (display (string-append "¡El jugador " (symbol->string turno) " ha ganado!\n"))
+        (display "¡Es un empate!\n")))
+
+  (display "¡Bienvenido a Shisima!\n")
+  (imprimir-tablero tablero)
+  (newline)
+
+  (let loop ()
+    (display (string-append "Turno del jugador " (symbol->string turno) ": "))
+
+    (define entrada (string-split (read-line) " "))
+    (define entrada-numeros (map string->number entrada))
+    (define fila-inicial (car entrada-numeros))
+    (define columna-inicial (cadr entrada-numeros))
+    (define fila-destino (caddr entrada-numeros))
+    (define columna-destino (cadddr entrada-numeros))
+
+    (if (and (integer? fila-inicial) (integer? columna-inicial) (integer? fila-destino) (integer? columna-destino) 
+             (movimiento-valido? tablero fila-inicial columna-inicial fila-destino columna-destino turno))
+        (begin
+          (set! tablero (realizar-movimiento tablero turno fila-inicial columna-inicial fila-destino columna-destino))
+          (imprimir-tablero tablero)
+          (newline)
+          (if (verificar-victoria tablero turno)
+              (mostrar-mensaje #t)
+              (if (andmap (lambda (fila) (andmap (lambda (casilla) (eq? casilla 'p)) fila)) tablero)
+                  (mostrar-mensaje #f)
+                  (begin
+                    (cambiar-turno)
+                    (loop)))))
+        (begin
+          (display "Movimiento inválido, elige otra casilla.\n")
+          (loop)))))

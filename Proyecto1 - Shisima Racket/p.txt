@@ -1,0 +1,3 @@
+split([A|B, N, L1, L2]):-
+	L1 = A size(N),
+	L2 = B.

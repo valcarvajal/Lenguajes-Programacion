@@ -1,0 +1,62 @@
+#lang racket
+
+;a.
+(define (sum-rank n)
+  (cond [(> n 0) (+ n (sum-rank (sub1 n)))]
+        	[else n]
+  )
+)
+
+
+;b.
+(define (compress lista)
+  (cond [(= 1 (length lista)) lista]
+        	[(= (first lista) (second lista)) (compress (cdr lista))]
+       	[else (cons (car lista) (compress (cdr lista)))]
+  )
+)
+
+
+;c.
+(define (flatten lista)
+  (cond	[(empty? lista) lista]
+[(list? (first lista)) (flatten (first lista))]
+[else (cons (car lista) (flatten (cdr lista)))]
+  )
+)
+
+
+;d.
+(define (duplicate lista)
+  (cond [(empty? lista) empty]
+        	[else (cons (car lista) (cons (car lista) (duplicate (cdr lista))))]
+  )
+)
+
+
+;e.
+(define contador 0)
+(define lista1 '())
+
+(define (split lista largo)
+  (set! contador (+ contador 1))
+  (cond [(empty? lista) (display lista1) (display lista)]
+   	[(<= contador largo) (set! lista1 (append lista1 (list(car lista)))) (split (cdr lista) largo)]
+   	[else (display lista1) (display lista)]
+  )
+)
+
+
+;f.
+(define (pack lista)
+  (cond [(empty? (cdr lista)) (list lista)]
+        	[(equal? (first lista) (second lista))
+         	(if (list? (first (pack (cdr lista))))
+                (cons (cons (first lista) (first (pack (cdr lista))))
+                (cdr (pack (cdr lista))))
+                (cons (list (cons (first lista) (first (pack (cdr lista)))))
+                (cdr (pack (cdr lista))))
+         	)]
+        	[else (cons (list (first lista)) (pack (cdr lista)))]
+  )
+)
